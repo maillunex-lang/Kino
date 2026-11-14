@@ -129,10 +129,13 @@ private fun LibraryContent(
                     Text(if (opened.id in favoriteIds) "Убрать из избранного" else "В избранное")
                 }
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = launchPlayer) { Text("Открыть плеер") }
+                val context = LocalContext.current
+                Button(onClick = {
+                    context.startActivity(Intent(context, PlayerActivity::class.java).putExtra("stream_url", opened.url))
+                }) { Text("Смотреть") }
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = { remove(opened) }) { Text("Удалить из библиотеки") }
-                Text("Откройте плеер и вставьте HTTPS-ссылку этого материала.", color = muted)
+                Text("Для воспроизведения используется сохранённая HTTPS-ссылка.", color = muted)
                 Text(opened.url, color = muted, fontSize = 12.sp)
             }
         }
