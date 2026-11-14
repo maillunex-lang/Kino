@@ -21,7 +21,7 @@ fun ProviderScreen() {
     val context = LocalContext.current
     var provider by remember { mutableStateOf("KinoPub") }
     var token by remember { mutableStateOf("") }
-    var page by remember { mutableStateOf("") }
+    var page by remember { mutableStateOf("https://kinogo.parts") }
     var results by remember { mutableStateOf(emptyList<CatalogItem>()) }
     var selected by remember { mutableStateOf<CatalogItem?>(null) }
     var error by remember { mutableStateOf("") }
@@ -51,8 +51,8 @@ fun ProviderScreen() {
         item {
             Text("Киноисточники", color = Color.White)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { provider = "KinoPub"; results = emptyList() }) { Text("KinoPub") }
-                Button(onClick = { provider = "Kinogo"; results = emptyList() }) { Text("Kinogo") }
+                Button(onClick = { provider = "KinoPub"; results = emptyList(); selected = null }) { Text("KinoPub") }
+                Button(onClick = { provider = "Kinogo"; results = emptyList(); selected = null }) { Text("Kinogo") }
             }
             if (provider == "KinoPub") {
                 Text("API KinoPub. Требуется токен собственного авторизованного клиента. Токен не сохраняется.", color = Color.LightGray)
@@ -60,7 +60,10 @@ fun ProviderScreen() {
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                     visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
             } else {
-                Text("Чтение метаданных публичной страницы Kinogo. Видеопотоки не извлекаются.", color = Color.LightGray)
+                Text("kinogo.parts: метаданные указанной страницы. Для просмотра можно открыть её в браузере; защищённые потоки не извлекаются.", color = Color.LightGray)
+                Button(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://kinogo.parts")))
+                }) { Text("Открыть Kinogo") }
                 OutlinedTextField(page, { page = it }, label = { Text("HTTPS-страница Kinogo") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true)
             }
@@ -82,6 +85,11 @@ fun ProviderScreen() {
                     }) { Text("Сезоны и серии") }
                 }
                 Text("Воспроизведение возможно только через разрешённые ссылки источника.", color = Color.LightGray)
+                if (provider == "Kinogo") {
+                    Button(onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(item.id)))
+                    }) { Text("Открыть страницу фильма") }
+                }
             }
             items(item.episodes) { ep -> Text("Сезон ${ep.season}, серия ${ep.episode}: ${ep.title}", color = Color.White) }
         } else {
