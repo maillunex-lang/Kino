@@ -1,0 +1,85 @@
+package ru.lunex.tv
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+
+class PlayerActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { MaterialTheme { PlayerScreen(onClose = { finish() }) } }
+    }
+}
+
+@Composable
+private fun PlayerScreen(onClose: () -> Unit) {
+    val context = LocalContext.current
+    var address by remember { mutableStateOf("") }
+    var currentUrl by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf("") }
+    val player = remember(context) { ExoPlayer.Builder(context).build() }
+    DisposableEffect(player) {
+        onDispose { player.release() }
+    }
+    LaunchedEffect(currentUrl) {
+        player.stop()
+        player.clearMediaItems()
+        currentUrl?.let { url ->
+            player.setMediaItem(MediaItem.fromUri(url))
+            player.prepare()
+            player.playWhenReady = true
+        }
+    }
+    Column(
+        Modifier.fillMaxSize().background(Color(0xFF0B1019)).safeDrawingPadding().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = onClose) { Text("Назад") }
+            Text("Lunex TV · Плеер", color = Color.White)
+        }
+        OutlinedTextField(
+            value = address, onValueChange = { address = it; error = "" },
+            label = { Text("Прямая HTTPS-ссылка на MP4 или HLS") },
+            modifier = Modifier.fillMaxWidth(), singleLine = true
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = {
+                val url = address.trim()
+                if (url.startsWith("https://", ignoreCase = true)) {
+                    currentUrl = url
+                    error = ""
+                } else {
+                    error = "Укажите ссылку, начинающуюся с https://"
+                }
+            }) { Text("Воспроизвести") }
+            Button(onClick = { currentUrl = null }) { Text("Стоп") }
+        }
+        if (error.isNotEmpty()) Text(error, color = Color(0xFFFFB4AB))
+        AndroidView(
+            factory = { viewContext ->
+                PlayerView(viewContext).apply {
+                    this.player = player
+                    useController = true
+                }
+            },
+            update = { it.player = player },
+            modifier = Modifier.fillMaxWidth().weight(1f)
+        )
+    }
+}
