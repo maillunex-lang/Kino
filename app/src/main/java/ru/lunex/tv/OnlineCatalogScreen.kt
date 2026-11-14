@@ -30,7 +30,7 @@ fun OnlineCatalogScreen() {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
-    var selectedSource by remember { mutableStateOf("NASA") }
+    var selectedSource by remember { mutableStateOf("Kinogo") }
     LaunchedEffect(refresh) {
         if (refresh == 0) return@LaunchedEffect
         loading = true
@@ -38,8 +38,7 @@ fun OnlineCatalogScreen() {
         try {
             items = withContext(Dispatchers.IO) {
                 when (selectedSource) {
-                    "NASA" -> BuiltInSources.nasa()
-                    "Internet Archive" -> BuiltInSources.archive()
+                    "Kinogo" -> listOf(KinogoPageSource().read("https://kinogo.parts"))
                     else -> HttpsJsonCatalogSource("Мой источник", endpoint.trim()).load()
                 }
             }
@@ -54,9 +53,9 @@ fun OnlineCatalogScreen() {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
         item {
             Text("Онлайн-каталог", color = Color.White)
-            Text("Встроенные источники: NASA и Internet Archive. У материалов могут быть отдельные условия лицензии.", color = Color.LightGray)
+            Text("Источник по умолчанию: kinogo.parts. Пока доступны метаданные страницы, не видеопотоки.", color = Color.LightGray)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("NASA", "Internet Archive", "Мой JSON").forEach { name ->
+                listOf("Kinogo", "Мой JSON").forEach { name ->
                     Button(onClick = { selectedSource = name; refresh++ }) { Text(if (selectedSource == name) "✓ $name" else name) }
                 }
             }
