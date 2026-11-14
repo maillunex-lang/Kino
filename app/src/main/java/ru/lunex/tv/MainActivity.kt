@@ -84,7 +84,7 @@ private fun LunexHome(isTv: Boolean) {
                         { launchPlayer() }, title, { title = it }, url, { url = it },
                         kind, { kind = it }, formError, { formError = it },
                         { entry -> entries = entries + entry; library.save(entries) },
-                        { entry -> entries = entries.filterNot { it.id == entry.id }; library.save(entries); opened = null })
+                        { entry -> entries = entries.filterNot { it.id == entry.id }; library.save(entries); opened = null }, navigate)
                 }
             }
         } else {
@@ -121,7 +121,8 @@ private fun LibraryContent(
     url: String, setUrl: (String) -> Unit,
     kind: String, setKind: (String) -> Unit,
     formError: String, setError: (String) -> Unit,
-    add: (LibraryEntry) -> Unit, remove: (LibraryEntry) -> Unit
+    add: (LibraryEntry) -> Unit, remove: (LibraryEntry) -> Unit,
+    navigateFromHome: (String) -> Unit
 ) {
     // Keep the favorite state reactive when it changes.
     val favoriteIds = remember(entries, favoritesVersion) {
@@ -151,6 +152,13 @@ private fun LibraryContent(
         }
         return
     }
+    if (section == "Главная") {
+        CinemaHomeScreen(entries, library, { open(it) }, { next ->
+            // Navigation is handled by the parent section state.
+            navigateFromHome(next)
+        })
+        return
+    }
     Text(section, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
     if (section == "Киноисточники") {
@@ -160,10 +168,6 @@ private fun LibraryContent(
     if (section == "Онлайн-каталог") {
         OnlineCatalogScreen()
         return
-    }
-    if (section == "Главная") {
-        ContinueWatchingScreen(entries)
-        Spacer(Modifier.height(14.dp))
     }
     if (section == "История") {
         val context = LocalContext.current
