@@ -23,6 +23,7 @@ dependencies {
     implementation("androidx.tv:tv-material:1.0.0")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.media3:media3-exoplayer:1.5.1")
