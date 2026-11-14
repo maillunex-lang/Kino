@@ -75,9 +75,17 @@ fun OnlineCatalogScreen() {
                 items(episodes.sortedBy { it.episode }) { episode ->
                     Button(onClick = {
                         if (episode.url.isNotEmpty()) {
-                            context.startActivity(Intent(context, PlayerActivity::class.java).putExtra("stream_url", episode.url)
+                            val ordered = current.episodes.sortedWith(compareBy<Episode> { it.season }.thenBy { it.episode })
+                            val next = ordered.getOrNull(ordered.indexOf(episode) + 1)
+                            val intent = Intent(context, PlayerActivity::class.java)
+                                .putExtra("stream_url", episode.url)
                                 .putExtra("media_id", "${current.id}:s${episode.season}e${episode.episode}")
-                                .putExtra("media_title", "${current.title} · ${episode.title}"))
+                                .putExtra("media_title", "${current.title} · ${episode.title}")
+                            if (next != null && next.url.startsWith("https://", true)) {
+                                intent.putExtra("next_stream_url", next.url)
+                                    .putExtra("next_media_id", "${current.id}:s${next.season}e${next.episode}")
+                            }
+                            context.startActivity(intent)
                         }
                     }, enabled = episode.url.isNotEmpty()) {
                         Text("${episode.episode}. ${episode.title}")
