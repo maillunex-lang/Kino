@@ -30,27 +30,41 @@ fun OnlineCatalogScreen() {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
+    var selectedSource by remember { mutableStateOf("NASA") }
     LaunchedEffect(refresh) {
         if (refresh == 0) return@LaunchedEffect
         loading = true
         error = ""
         try {
-            val source = HttpsJsonCatalogSource("Мой источник", endpoint.trim())
-            items = withContext(Dispatchers.IO) { source.load() }
-            registry.save(listOf(endpoint.trim()))
+            items = withContext(Dispatchers.IO) {
+                when (selectedSource) {
+                    "NASA" -> BuiltInSources.nasa()
+                    "Internet Archive" -> BuiltInSources.archive()
+                    else -> HttpsJsonCatalogSource("Мой источник", endpoint.trim()).load()
+                }
+            }
+            if (selectedSource == "Мой JSON") registry.save(listOf(endpoint.trim()))
         } catch (e: Exception) {
             error = "Не удалось загрузить каталог: ${e.message.orEmpty().take(120)}"
         } finally {
             loading = false
         }
     }
+    LaunchedEffect(Unit) { refresh++ }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
         item {
             Text("Онлайн-каталог", color = Color.White)
-            Text("Подключите разрешённый JSON-каталог по HTTPS.", color = Color.LightGray)
-            OutlinedTextField(endpoint, { endpoint = it }, label = { Text("HTTPS URL каталога") },
-                modifier = Modifier.fillMaxWidth(), singleLine = true)
-            Button(onClick = { refresh++ }) { Text("Загрузить каталог") }
+            Text("Встроенные источники: NASA и Internet Archive. У материалов могут быть отдельные условия лицензии.", color = Color.LightGray)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("NASA", "Internet Archive", "Мой JSON").forEach { name ->
+                    Button(onClick = { selectedSource = name; refresh++ }) { Text(if (selectedSource == name) "✓ $name" else name) }
+                }
+            }
+            if (selectedSource == "Мой JSON") {
+                OutlinedTextField(endpoint, { endpoint = it }, label = { Text("HTTPS URL каталога") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true)
+            }
+            Button(onClick = { refresh++ }) { Text("Обновить каталог") }
             if (loading) CircularProgressIndicator()
             if (error.isNotEmpty()) Text(error, color = Color(0xFFFFB4AB))
         }
