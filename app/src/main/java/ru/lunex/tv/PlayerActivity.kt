@@ -41,6 +41,20 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?
     var playingId by remember { mutableStateOf(mediaId) }
     var switchedToNext by remember { mutableStateOf(false) }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, player) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
+                    if (settings.load().rememberPosition) playingId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
+                    player.pause()
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     LaunchedEffect(player, mediaId) {
         while (true) {
             delay(5000)
@@ -54,6 +68,7 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?
                     Player.STATE_BUFFERING -> "Загрузка видео…"
                     Player.STATE_READY -> "Видео готово"
                     Player.STATE_ENDED -> {
+                        if (settings.load().rememberPosition) playingId?.let { history.save(it, player.duration.coerceAtLeast(0), player.duration.coerceAtLeast(0)) }
                         if (!switchedToNext && settings.load().autoplayNextEpisode && nextUrl?.startsWith("https://", true) == true) {
                             switchedToNext = true
                             playingId = nextId
@@ -73,7 +88,7 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?
     }
     DisposableEffect(player) {
         onDispose {
-            mediaId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
+            if (settings.load().rememberPosition) playingId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
             player.release()
         }
     }
