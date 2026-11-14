@@ -27,17 +27,22 @@ fun ProviderScreen() {
     var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var command by remember { mutableIntStateOf(0) }
+    var detailsId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(command) {
         if (command == 0) return@LaunchedEffect
         busy = true
         error = ""
         try {
             val data = withContext(Dispatchers.IO) {
-                if (provider == "KinoPub") KinoPubSource(token).catalog()
+                if (provider == "KinoPub") {
+                    if (detailsId != null) listOf(KinoPubSource(token).details(detailsId!!))
+                    else KinoPubSource(token).catalog()
+                }
                 else listOf(KinogoPageSource().read(page))
             }
-            results = data
-            selected = null
+            if (detailsId != null) selected = data.firstOrNull()
+            else { results = data; selected = null }
+            detailsId = null
         } catch (e: Exception) {
             error = "Источник недоступен: ${e.message.orEmpty().take(100)}"
         } finally { busy = false }
@@ -72,8 +77,8 @@ fun ProviderScreen() {
                 Text(item.description, color = Color.LightGray)
                 if (provider == "KinoPub") {
                     Button(onClick = {
-                        // Details request is handled in the follow-up command below.
-                        command = -1
+                        detailsId = item.id
+                        command++
                     }) { Text("Сезоны и серии") }
                 }
                 Text("Воспроизведение возможно только через разрешённые ссылки источника.", color = Color.LightGray)
