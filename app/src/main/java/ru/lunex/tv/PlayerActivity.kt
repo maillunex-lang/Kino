@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
@@ -32,7 +34,25 @@ private fun PlayerScreen(onClose: () -> Unit) {
     var address by remember { mutableStateOf("") }
     var currentUrl by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf("") }
+    var playbackStatus by remember { mutableStateOf("Ожидание ссылки") }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                playbackStatus = when (playbackState) {
+                    Player.STATE_BUFFERING -> "Загрузка видео…"
+                    Player.STATE_READY -> "Видео готово"
+                    Player.STATE_ENDED -> "Воспроизведение завершено"
+                    else -> "Ожидание видео"
+                }
+            }
+            override fun onPlayerError(error: PlaybackException) {
+                playbackStatus = "Ошибка воспроизведения: ${error.errorCodeName}"
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
     DisposableEffect(player) {
         onDispose { player.release() }
     }
@@ -71,6 +91,7 @@ private fun PlayerScreen(onClose: () -> Unit) {
             Button(onClick = { currentUrl = null }) { Text("Стоп") }
         }
         if (error.isNotEmpty()) Text(error, color = Color(0xFFFFB4AB))
+        Text(playbackStatus, color = Color(0xFFB9C4D5))
         AndroidView(
             factory = { viewContext ->
                 PlayerView(viewContext).apply {
