@@ -25,23 +25,26 @@ import kotlinx.coroutines.delay
 class PlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { PlayerScreen(initialUrl = intent.getStringExtra("stream_url"), mediaId = intent.getStringExtra("media_id"), onClose = { finish() }) } }
+        setContent { MaterialTheme { PlayerScreen(initialUrl = intent.getStringExtra("stream_url"), mediaId = intent.getStringExtra("media_id"), nextUrl = intent.getStringExtra("next_stream_url"), nextId = intent.getStringExtra("next_media_id"), onClose = { finish() }) } }
     }
 }
 
 @Composable
-private fun PlayerScreen(initialUrl: String?, mediaId: String?, onClose: () -> Unit) {
+private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?, nextId: String?, onClose: () -> Unit) {
     val context = LocalContext.current
     var address by remember { mutableStateOf(initialUrl.orEmpty()) }
     var currentUrl by remember { mutableStateOf(initialUrl?.takeIf { it.startsWith("https://", ignoreCase = true) }) }
     var error by remember { mutableStateOf("") }
     var playbackStatus by remember { mutableStateOf("Ожидание ссылки") }
     val history = remember(context) { WatchHistory(context) }
+    val settings = remember(context) { CinemaSettings(context) }
+    var playingId by remember { mutableStateOf(mediaId) }
+    var switchedToNext by remember { mutableStateOf(false) }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
     LaunchedEffect(player, mediaId) {
         while (true) {
             delay(5000)
-            mediaId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
+            if (settings.load().rememberPosition) playingId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
         }
     }
     DisposableEffect(player) {
@@ -50,7 +53,14 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, onClose: () -> U
                 playbackStatus = when (playbackState) {
                     Player.STATE_BUFFERING -> "Загрузка видео…"
                     Player.STATE_READY -> "Видео готово"
-                    Player.STATE_ENDED -> "Воспроизведение завершено"
+                    Player.STATE_ENDED -> {
+                        if (!switchedToNext && settings.load().autoplayNextEpisode && nextUrl?.startsWith("https://", true) == true) {
+                            switchedToNext = true
+                            playingId = nextId
+                            currentUrl = nextUrl
+                            "Следующая серия…"
+                        } else "Воспроизведение завершено"
+                    }
                     else -> "Ожидание видео"
                 }
             }
@@ -73,7 +83,7 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, onClose: () -> U
         currentUrl?.let { url ->
             player.setMediaItem(MediaItem.fromUri(url))
             player.prepare()
-            val saved = mediaId?.let { history.get(it) }
+            val saved = if (settings.load().rememberPosition) playingId?.let { history.get(it) } else null
             if (saved != null && saved.positionMs > 0 && (saved.durationMs == 0L || saved.positionMs < saved.durationMs - 10000)) {
                 player.seekTo(saved.positionMs)
             }
