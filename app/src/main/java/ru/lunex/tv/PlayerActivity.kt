@@ -20,22 +20,30 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.delay
 
 class PlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { PlayerScreen(initialUrl = intent.getStringExtra("stream_url"), onClose = { finish() }) } }
+        setContent { MaterialTheme { PlayerScreen(initialUrl = intent.getStringExtra("stream_url"), mediaId = intent.getStringExtra("media_id"), onClose = { finish() }) } }
     }
 }
 
 @Composable
-private fun PlayerScreen(initialUrl: String?, onClose: () -> Unit) {
+private fun PlayerScreen(initialUrl: String?, mediaId: String?, onClose: () -> Unit) {
     val context = LocalContext.current
     var address by remember { mutableStateOf(initialUrl.orEmpty()) }
     var currentUrl by remember { mutableStateOf(initialUrl?.takeIf { it.startsWith("https://", ignoreCase = true) }) }
     var error by remember { mutableStateOf("") }
     var playbackStatus by remember { mutableStateOf("Ожидание ссылки") }
+    val history = remember(context) { WatchHistory(context) }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
+    LaunchedEffect(player, mediaId) {
+        while (true) {
+            delay(5000)
+            mediaId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
+        }
+    }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -54,7 +62,10 @@ private fun PlayerScreen(initialUrl: String?, onClose: () -> Unit) {
         onDispose { player.removeListener(listener) }
     }
     DisposableEffect(player) {
-        onDispose { player.release() }
+        onDispose {
+            mediaId?.let { history.save(it, player.currentPosition, player.duration.coerceAtLeast(0)) }
+            player.release()
+        }
     }
     LaunchedEffect(currentUrl) {
         player.stop()
@@ -62,6 +73,10 @@ private fun PlayerScreen(initialUrl: String?, onClose: () -> Unit) {
         currentUrl?.let { url ->
             player.setMediaItem(MediaItem.fromUri(url))
             player.prepare()
+            val saved = mediaId?.let { history.get(it) }
+            if (saved != null && saved.positionMs > 0 && (saved.durationMs == 0L || saved.positionMs < saved.durationMs - 10000)) {
+                player.seekTo(saved.positionMs)
+            }
             player.playWhenReady = true
         }
     }
