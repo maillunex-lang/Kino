@@ -164,7 +164,10 @@ private fun LibraryContent(
     if (section == "История") {
         val context = LocalContext.current
         val history = remember(context) { WatchHistory(context) }
-        val recent = remember(section) { history.recent() }
+        val showCompleted = CinemaSettings(context).load().showCompletedInContinue
+        val recent = history.recent().filter { (_, progress) ->
+            showCompleted || progress.durationMs <= 0 || progress.positionMs < progress.durationMs - 10000
+        }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(recent) { (id, progress) ->
                 Text("$id · ${progress.positionMs / 60000} мин.", color = Color.White)
@@ -173,7 +176,7 @@ private fun LibraryContent(
         return
     }
     if (section == "Настройки") {
-        Text("Lunex TV. Персональная библиотека хранится только на этом устройстве. Источники кино пока не подключены.", color = muted)
+        CinemaSettingsScreen()
         return
     }
     if (section == "Моя библиотека") {
