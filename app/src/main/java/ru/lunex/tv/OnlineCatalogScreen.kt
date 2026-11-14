@@ -38,7 +38,7 @@ fun OnlineCatalogScreen() {
         try {
             items = withContext(Dispatchers.IO) {
                 when (selectedSource) {
-                    "Kinogo" -> listOf(KinogoPageSource().read("https://kinogo.parts"))
+                    "Kinogo" -> emptyList()
                     else -> HttpsJsonCatalogSource("Мой источник", endpoint.trim()).load()
                 }
             }
@@ -53,7 +53,12 @@ fun OnlineCatalogScreen() {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
         item {
             Text("Онлайн-каталог", color = Color.White)
-            Text("Источник по умолчанию: kinogo.parts. Пока доступны метаданные страницы, не видеопотоки.", color = Color.LightGray)
+            Text("Kinogo: открыть сайт в браузере. Прямой каталог и воспроизведение требуют поддерживаемого API и разрешённого доступа.", color = Color.LightGray)
+            if (selectedSource == "Kinogo") {
+                Button(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://kinogo.parts")))
+                }) { Text("Открыть kinogo.parts") }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf("Kinogo", "Мой JSON").forEach { name ->
                     Button(onClick = { selectedSource = name; refresh++ }) { Text(if (selectedSource == name) "✓ $name" else name) }
