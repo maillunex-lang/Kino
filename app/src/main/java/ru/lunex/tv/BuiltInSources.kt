@@ -22,7 +22,7 @@ object BuiltInSources {
     }
 
     fun nasa(): List<CatalogItem> {
-        val root = json("https://images-api.nasa.gov/search?q=space&media_type=video&page_size=30")
+        val root = json("https://images-api.nasa.gov/search?q=space&media_type=video&page_size=8")
         val items = root.getJSONObject("collection").getJSONArray("items")
         return (0 until items.length()).mapNotNull { i ->
             runCatching {
@@ -43,7 +43,7 @@ object BuiltInSources {
 
     fun archive(): List<CatalogItem> {
         val q = URLEncoder.encode("mediatype:movies AND licenseurl:*", "UTF-8")
-        val root = json("https://archive.org/advancedsearch.php?q=$q&fl[]=identifier&fl[]=title&fl[]=year&rows=18&output=json")
+        val root = json("https://archive.org/advancedsearch.php?q=$q&fl[]=identifier&fl[]=title&fl[]=year&rows=8&output=json")
         val docs = root.getJSONObject("response").getJSONArray("docs")
         return (0 until docs.length()).mapNotNull { i ->
             runCatching {
