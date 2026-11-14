@@ -4,6 +4,8 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
@@ -26,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val background = Color(0xFF0B1019)
-private val sections = listOf("Главная", "Фильмы", "Сериалы", "Поиск", "Настройки")
+private val sections = listOf("Главная", "Фильмы", "Сериалы", "Поиск", "Плеер", "Настройки")
 private data class Film(val id: String, val title: String, val year: Int, val kind: String, val description: String)
 private val demo = listOf(
     Film("demo-1", "Орбита", 2026, "Фильм", "Демонстрационная карточка фантастического фильма."),
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun LunexHome(isTv: Boolean) {
+    val context = LocalContext.current
     var section by remember { mutableStateOf("Главная") }
     var opened by remember { mutableStateOf<Film?>(null) }
     var search by remember { mutableStateOf("") }
@@ -57,7 +60,7 @@ private fun LunexHome(isTv: Boolean) {
                     Text("LUNEX TV", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(18.dp))
                     sections.forEach { item ->
-                        Button(onClick = { section = item; opened = null }) { Text(item) }
+                        Button(onClick = { if (item == "Плеер") context.startActivity(Intent(context, PlayerActivity::class.java)) else { section = item; opened = null } }) { Text(item) }
                     }
                 }
                 Column(Modifier.weight(1f).padding(start = 22.dp)) {
