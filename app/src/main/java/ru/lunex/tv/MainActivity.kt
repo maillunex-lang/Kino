@@ -21,6 +21,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -29,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import java.util.UUID
 
 private val background = Color(0xFF0B1019)
-private val sections = listOf("Главная", "Фильмы", "Сериалы", "Избранное", "Поиск", "Моя библиотека", "Плеер", "Настройки")
+private val sections = listOf("Главная", "Фильмы", "Сериалы", "Избранное", "Поиск", "Онлайн-каталог", "История", "Моя библиотека", "Плеер", "Настройки")
 private val muted = Color(0xFFB9C4D5)
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +54,8 @@ private fun LunexHome(isTv: Boolean) {
     val context = LocalContext.current
     val library = remember(context) { LocalLibrary(context) }
     var entries by remember { mutableStateOf(library.load()) }
+    val firstFocus = remember { FocusRequester() }
+    LaunchedEffect(isTv) { if (isTv) firstFocus.requestFocus() }
     var favoritesVersion by remember { mutableIntStateOf(0) }
     var section by remember { mutableStateOf("Главная") }
     var opened by remember { mutableStateOf<LibraryEntry?>(null) }
@@ -66,7 +76,7 @@ private fun LunexHome(isTv: Boolean) {
             Row(Modifier.fillMaxSize().background(background).padding(24.dp)) {
                 LazyColumn(Modifier.width(220.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     item { Text("LUNEX TV", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold) }
-                    items(sections) { item -> Button(onClick = { navigate(item) }) { Text(item) } }
+                    items(sections) { item -> Button(onClick = { navigate(item) }, modifier = if (item == "Главная") Modifier.focusRequester(firstFocus) else Modifier) { Text(item) } }
                 }
                 Column(Modifier.weight(1f).padding(start = 22.dp)) {
                     LibraryContent(section, opened, entries, search, { search = it }, library,
@@ -131,7 +141,7 @@ private fun LibraryContent(
                 Spacer(Modifier.height(8.dp))
                 val context = LocalContext.current
                 Button(onClick = {
-                    context.startActivity(Intent(context, PlayerActivity::class.java).putExtra("stream_url", opened.url))
+                    context.startActivity(Intent(context, PlayerActivity::class.java).putExtra("stream_url", opened.url).putExtra("media_id", opened.id).putExtra("media_title", opened.title))
                 }) { Text("Смотреть") }
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = { remove(opened) }) { Text("Удалить из библиотеки") }
@@ -143,6 +153,21 @@ private fun LibraryContent(
     }
     Text(section, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
+    if (section == "Онлайн-каталог") {
+        OnlineCatalogScreen()
+        return
+    }
+    if (section == "История") {
+        val context = LocalContext.current
+        val history = remember(context) { WatchHistory(context) }
+        val recent = remember(section) { history.recent() }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(recent) { (id, progress) ->
+                Text("$id · ${progress.positionMs / 60000} мин.", color = Color.White)
+            }
+        }
+        return
+    }
     if (section == "Настройки") {
         Text("Lunex TV. Персональная библиотека хранится только на этом устройстве. Источники кино пока не подключены.", color = muted)
         return
