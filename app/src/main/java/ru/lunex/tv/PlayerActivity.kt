@@ -33,6 +33,7 @@ class PlayerActivity : ComponentActivity() {
 private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?, nextId: String?, onClose: () -> Unit) {
     val context = LocalContext.current
     var address by remember { mutableStateOf(initialUrl.orEmpty()) }
+    var showAddressEditor by remember { mutableStateOf(initialUrl.isNullOrBlank()) }
     var currentUrl by remember { mutableStateOf(initialUrl?.takeIf { it.startsWith("https://", ignoreCase = true) }) }
     var error by remember { mutableStateOf("") }
     var playbackStatus by remember { mutableStateOf("Ожидание ссылки") }
@@ -113,6 +114,7 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?
             Button(onClick = onClose) { Text("Назад") }
             Text("Lunex TV · Плеер", color = Color.White)
         }
+        if (showAddressEditor) {
         OutlinedTextField(
             value = address, onValueChange = { address = it; error = "" },
             label = { Text("Прямая HTTPS-ссылка на MP4 или HLS") },
@@ -129,6 +131,10 @@ private fun PlayerScreen(initialUrl: String?, mediaId: String?, nextUrl: String?
                 }
             }) { Text("Воспроизвести") }
             Button(onClick = { currentUrl = null }) { Text("Стоп") }
+        }
+        }
+        if (!showAddressEditor) {
+            Button(onClick = { showAddressEditor = true }) { Text("Другая ссылка") }
         }
         if (error.isNotEmpty()) Text(error, color = Color(0xFFFFB4AB))
         Text(playbackStatus, color = Color(0xFFB9C4D5))
