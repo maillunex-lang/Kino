@@ -24,15 +24,15 @@ import androidx.media3.ui.PlayerView
 class PlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { PlayerScreen(onClose = { finish() }) } }
+        setContent { MaterialTheme { PlayerScreen(initialUrl = intent.getStringExtra("stream_url"), onClose = { finish() }) } }
     }
 }
 
 @Composable
-private fun PlayerScreen(onClose: () -> Unit) {
+private fun PlayerScreen(initialUrl: String?, onClose: () -> Unit) {
     val context = LocalContext.current
-    var address by remember { mutableStateOf("") }
-    var currentUrl by remember { mutableStateOf<String?>(null) }
+    var address by remember { mutableStateOf(initialUrl.orEmpty()) }
+    var currentUrl by remember { mutableStateOf(initialUrl?.takeIf { it.startsWith("https://", ignoreCase = true) }) }
     var error by remember { mutableStateOf("") }
     var playbackStatus by remember { mutableStateOf("Ожидание ссылки") }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
