@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import java.util.UUID
 
 private val background = Color(0xFF0B1019)
-private val sections = listOf("Главная", "Фильмы", "Сериалы", "Избранное", "Поиск", "Онлайн-каталог", "История", "Моя библиотека", "Плеер", "Настройки")
+private val sections = listOf("Главная", "Фильмы", "Сериалы", "Избранное", "Поиск", "Онлайн-каталог", "Киноисточники", "История", "Моя библиотека", "Плеер", "Настройки")
 private val muted = Color(0xFFB9C4D5)
 
 class MainActivity : ComponentActivity() {
@@ -153,6 +153,10 @@ private fun LibraryContent(
     }
     Text(section, color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
+    if (section == "Киноисточники") {
+        ProviderScreen()
+        return
+    }
     if (section == "Онлайн-каталог") {
         OnlineCatalogScreen()
         return
