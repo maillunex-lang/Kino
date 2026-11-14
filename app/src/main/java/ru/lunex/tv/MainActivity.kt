@@ -104,7 +104,7 @@ private fun LunexHome(isTv: Boolean) {
                         { launchPlayer() }, title, { title = it }, url, { url = it },
                         kind, { kind = it }, formError, { formError = it },
                         { entry -> entries = entries + entry; library.save(entries) },
-                        { entry -> entries = entries.filterNot { it.id == entry.id }; library.save(entries); opened = null })
+                        { entry -> entries = entries.filterNot { it.id == entry.id }; library.save(entries); opened = null }, navigate)
                 }
             }
         }
