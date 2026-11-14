@@ -71,9 +71,3 @@ class KinoPubSource(private val accessToken: String) {
     }
 }
 
-class KinoPubSettings(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences("kinopub_config", Context.MODE_PRIVATE)
-    fun token() = prefs.getString("token", "").orEmpty()
-    fun setToken(token: String) { prefs.edit().putString("token", token.trim()).apply() }
-    fun clear() { prefs.edit().remove("token").apply() }
-}
